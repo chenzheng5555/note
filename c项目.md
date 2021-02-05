@@ -1,0 +1,197 @@
+### 贪吃蛇
+
++ 用队列存储蛇的身体，用数组来绘制蛇和地图。队列是不必须的，可以根据蛇的起始点和蛇的长度得到蛇的长度；起始点为蛇的长度，向蛇的尾部边移动边递减，则蛇尾部的值为1，向某个方向移动后，之前各位置上的值递减，则之前的尾部值就变为0了。绘制时将值大于0的作为蛇的身体，
+
+```c
+#include <conio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <windows.h>
+
+typedef struct Point {  //定义起始点和点心的位置
+    int x, y;
+} Point;
+typedef struct Queue {  //存储蛇的身体
+    int left, right, size, maxsize;
+    int* p;
+} Queue;
+
+int hightestScore, currentScore = 0;
+int height = 20, width = 30, speed = 500;
+int direction[4][2] = { { 0, 1 }, { -1, 0 }, { 0, -1 }, { 1, 0 } };
+
+int queuePop(Queue* q); //弹出最早进入队列的点
+int queuePush(Queue* q, int v); //加入新的点
+void init(int** visited, Queue* queue, Point* start, Point* cookie); //初始化蛇起点和点心位置，和用于绘制的数组
+void freeVar(int* v, int* p); //释放申请的队列和数组内存
+void printLine(int k); //打印k个‘=’
+void printSnake(int* visited);//根据数组绘制蛇
+void printHome(); //起始页
+int move(Queue* q, int* visited, Point* start, Point* cookie, int k);//往k方向移动
+void getButton(int* d);//获取按键输入，修改方向
+Point randomPoint(int* visited);//产生点心的随机位置
+
+int main()
+{
+    int key;
+    while (1) {
+        printHome();
+        key = getch();
+        if (key == 13) {
+            int* visited;
+            Queue queue;
+            Point start, cookie;
+            init(&visited, &queue, &start, &cookie);
+            //for(int i=0;i<height*width;++i)printf("%d ",visited[i]);
+            int d = 0;
+            while (1) {
+                printSnake(visited);
+                Sleep(speed);
+                getButton(&d);
+                if (move(&queue, visited, &start, &cookie, d)) {
+                    freeVar(visited, queue.p);
+                    Sleep(3000);
+                    break;
+                }
+            }
+        } else {
+            if (key == 83 || key == 's')
+                scanf("%d", &speed);
+            else if (key == 72 || key == 'h')
+                scanf("%d", &height);
+            else if (key == 87 || key == 'w')
+                scanf("%d", &width);
+        }
+    }
+    return 0;
+}
+
+void init(int** visited, Queue* queue, Point* start, Point* cookie)
+{
+    int M = height * width;
+    *visited = (int*)malloc(sizeof(int) * M);
+    queue->left = queue->right = -1, queue->maxsize = M, queue->size = 0;
+    queue->p = (int*)malloc(sizeof(int) * M);
+
+    memset(*visited, 0, sizeof(int) * M);
+    *start = randomPoint(*visited);
+    int n = start->x * width + start->y;
+    (*visited)[n] = 1;
+    queuePush(queue, n);
+    *cookie = randomPoint(*visited);
+    n = cookie->x * width + cookie->y;
+    (*visited)[n] = 1;
+}
+void freeVar(int* v, int* p)
+{
+    free(v);
+    free(p);
+}
+
+int queuePop(Queue* q)
+{
+    if (q->size == 0)
+        return 1;
+    if (q->left == q->maxsize - 1)
+        q->left = -1;
+    q->left++;
+    q->size--;
+    return 0;
+}
+int queuePush(Queue* q, int v)
+{
+    if (q->size == q->maxsize)
+        return 1;
+    if (q->right == q->maxsize - 1)
+        q->right = -1;
+    q->p[++q->right] = v;
+    q->size++;
+    return 0;
+}
+
+void printLine(int k)
+{
+    for (int i = 0; i < k; ++i)
+        printf("=");
+    printf("\n");
+}
+
+void printSnake(int* visited)
+{
+    system("cls");
+    printLine(width + 4);
+    for (int i = 0; i < height; ++i) {
+        printf("||");
+        for (int j = 0; j < width; ++j) {
+            if (visited[i * width + j])
+                printf("*");
+            else
+                printf(" ");
+        }
+        printf("||\n");
+    }
+    printLine(width + 4);
+}
+
+void printHome()
+{
+    system("cls");
+    CONSOLE_CURSOR_INFO cursor_info = { 1, 0 };
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursor_info);
+    printLine(50);
+    printf("input Enter to start game\n");
+    printf("or (h)eight,(w)idth,(s)peed to set config\n");
+    printLine(50);
+}
+
+Point randomPoint(int* visited)
+{
+    int x = rand() % height, y = rand() % width;
+    while (visited[x * width + y]) {
+        x = rand() % height, y = rand() % width;
+    }
+    Point p = { x, y };
+    return p;
+}
+
+int move(Queue* q, int* visited, Point* start, Point* cookie, int k)
+{
+    int l = q->p[q->left + 1];
+    visited[l] = 0;
+    int x = start->x + direction[k][0], y = start->y + direction[k][1];
+    int n = x * width + y;
+    if (cookie->x == x && cookie->y == y) {
+        start->x = x, start->y = y;
+        queuePush(q, n);
+        *cookie = randomPoint(visited);
+        visited[l] = 1;
+        visited[cookie->x * width + cookie->y] = 1;
+    } else if (x < 0 || x >= height || y < 0 || y >= width || visited[n]) {
+        return 1; //碰到边界或吃到自己
+    } else {
+        start->x = x, start->y = y;
+        queuePop(q);
+        queuePush(q, n);
+        visited[n] = 1;
+    }
+    return 0;
+}
+
+void getButton(int* d)
+{
+    if (kbhit()) {
+        int key = getch();
+        if (key == 72)
+            *d = 1;
+        if (key == 80)
+            *d = 3;
+        if (key == 75)
+            *d = 2;
+        if (key == 77)
+            *d = 0;
+    }
+}
+
+```
+

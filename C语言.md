@@ -1,58 +1,75 @@
-# C语言程序设计-浙江大学-翁恺
+## 关键字
 
-## 基础
+### const
 
-+ 变量（类型（自定义类型typedef）、赋值、输入\输出、常量）
++ 常量，不能改变，所以定义时必须初始化。
 
-+ 表达式（运算符、优先级）
+### static 
 
-+ 控制（判断if-else、循环for\while）
++ 静态，隐藏，扩展
 
-+ 函数（声明、定义、参数）
+### extern
 
-+ 数组
+## 变量
 
-+ 指针、动态内存分配
+### 全局变量
 
-  + 指针是const（**const在*后面**），int * const p；指针不改变，不能指向其他变量。
-  + 所指是const（**const在*前面**），const int*  p；不能通过p修改其所指向变量的值，变量自身和指针都可以变。
+```c
+int globle;//函数外的变量
+int arr[globle]; //函数外的数组，error: variably modified 'arr' at file scope
+void f(){
+    int arr[globle]; //编译通过。
+}
+```
 
-  ```c
-  int* const p = &i;      const int *q = &j;
-  p++;     /*Error*/      *q = 10;  //Error
-  *p = 10; /*OK*/         q++;j=10; //OK
-  ```
+```powershell
+ error: variably modified 'arr' at file scope
+ int arr[globle];
+```
 
-  + 指针数组和数组指针。
+### 作用域和生命周期
 
-  ```c
-  int a[3][10];
-  int *p[10]   /*指针数组，10个int指针构成的数组*/  p[1]=a[1];  //p++指向a[1][1]
-  int (*p)[10] /*数组指针，指向数组长度为10的指针*/  p=a;p++; //p++指向a[1],p++跨过长度为10的数组。
-  ```
 
-  
+
+## 指针
+
+### 指针+const
+
++ 指针是const（**const在*后面**），int * const p；指针不改变，不能指向其他变量。
++ 所指是const（**const在*前面**），const int*  p；不能通过p修改其所指向变量的值，变量自身和指针都可以变。
+
+```c
+int* const p = &i;      const int *q = &j;
+p++;     /*Error*/      *q = 10;  //Error
+*p = 10; /*OK*/         q++;j=10; //OK
+```
+
+### 指针+数组
+
+```c
+int a[3][10];
+//[]的优先级高于*。
+int *p[10]   /*指针数组，10个int指针构成的数组*/  p[1]=a[1];  //p++指向a[1][1]
+int (*p)[10] /*数组指针，指向数组长度为10的指针*/  p=a;p++; //p++指向a[1],p++跨过长度为10的数组。
+
+```
+
+
 
 + 字符串（\0、字符串常量）
 
   + `char* s = "Hello"`，s为一个指向字符串常量的指针，等价于`const char* s`，不能通过s修改字符串。
-
 + 枚举enum、结构struct、联合union
-
 + 全局变量、静态变量static
-
 + 编译预处理、宏
-
 + 多文件、头文件
 
   + `#include`：将文件的全部文本内容插入到#include所在位置。
 
   + 双引号`""`：当前目录->编译器指定目录；尖括号`<>`：编译器指定目录。
-
 + 文件读写（fopen、fclose、fscanf、fprintf、fread、fwrite）：
 
   + `exe > out `：将程序exe的输出输入到out文件；`exe < in`：将文件in的内容作为程序exe的输入。
-
 + 位运算
 
 ## 小技巧
