@@ -313,6 +313,26 @@ struct ListNode* reverseKGroup(struct ListNode* head, int k)
 }
 ```
 
+#### [119. 杨辉三角 II](https://leetcode-cn.com/problems/pascals-triangle-ii/)
+
+```c
+//方法：杨辉三角为二项式的系数，有规律，组合。
+//也可以一层一层的算。
+int *getRow(int rowIndex, int *returnSize)
+{
+    int *ans = (int *)malloc(sizeof(int) * (rowIndex + 1));
+    ans[0] = ans[rowIndex] = 1;
+    for (int i = 1; i < rowIndex; ++i){
+        if (i <= rowIndex / 2)
+            ans[i] = (long long)ans[i - 1] * (rowIndex - i + 1) / i; //注意运算可能溢出。
+        else
+            ans[i] = ans[rowIndex - i];
+    }
+    *returnSize = rowIndex + 1;
+    return ans;
+}
+```
+
 #### [424. 替换后的最长重复字符](https://leetcode-cn.com/problems/longest-repeating-character-replacement/)
 
 ```c
@@ -338,6 +358,27 @@ int characterReplacement(char* s, int k)
     return right - left;
 }
 ```
+
+#### [448. 找到所有数组中消失的数字](https://leetcode-cn.com/problems/find-all-numbers-disappeared-in-an-array/)
+
+```c
+//方法：基本方法是申请一个大小为n的数组，用来标记下标为i的数是否出现。因为值全部小于n，所以可以利用原数组来表示，如果下标为i的数出现，则i位置上的数就加n。
+//或者可以进行排序，排第i个位置时，往后查找为值为i的地址，并交互，则缺失的数会找不到。
+int *findDisappearedNumbers(int *nums, int numsSize, int *returnSize)
+{
+    for (int i = 0; i < numsSize; ++i)
+        nums[(nums[i] - 1) % numsSize] += numsSize;
+    int *ans = (int *)malloc(sizeof(int) * numsSize);
+    *returnSize = 0;
+    for (int i = 0; i < numsSize; ++i){
+        if (nums[i] <= numsSize)
+            ans[(*returnSize)++] = i + 1;
+    }
+    return ans;
+}
+```
+
+
 
 #### [480. 滑动窗口中位数](https://leetcode-cn.com/problems/sliding-window-median/)
 
@@ -516,7 +557,7 @@ double* medianSlidingWindow(int* nums, int numsSize, int k, int* returnSize)
     node maxHeap[MAXSIZE], minHeap[MAXSIZE];
     int minCnt = 0, maxCnt = 0, i = 0;
     node n, m;
-    for (; i < k; ++i) {
+    for (; i < k; ++i) { //由第一个窗口构建堆
         n.v = nums[i], n.i = i;
         adjust(maxHeap, minHeap, &maxCnt, &minCnt, n);
     }
@@ -531,11 +572,11 @@ double* medianSlidingWindow(int* nums, int numsSize, int k, int* returnSize)
         else
             ans[j] = ((double)x.v + (double)y.v) / 2;//两个相加可能超过int的范围
 
-        if (i == numsSize)
+        if (i == numsSize)  //判断是否继续移动窗口
             break;
-        n.v = nums[i], n.i = i;
+        n.v = nums[i], n.i = i;  
         m.v = nums[j], m.i = j;
-        if (x.v == y.v) {
+        if (x.v == y.v) {  //找到被窗口移除的元素，并从堆中删除
             int f = maxHeapDeletek(maxHeap, &maxCnt, m);
             if (f == 0)
                 minHeapDeletek(minHeap, &minCnt, m);
@@ -553,6 +594,95 @@ double* medianSlidingWindow(int* nums, int numsSize, int k, int* returnSize)
         // print(minHeap,minCnt,"min");
     }
     return ans;
+}
+```
+
+#### [485. 最大连续1的个数](https://leetcode-cn.com/problems/max-consecutive-ones/)
+
+```c
+//方法：遍历，如果出现0则计数清零，否则加一
+int findMaxConsecutiveOnes(int *nums, int numsSize){
+    int maxCnt = 0;
+    for (int i = 0; i < numsSize; ++i){
+        int cnt = 0;
+        while (i < numsSize && nums[i])
+            i++, cnt++;
+        if (maxCnt < cnt)
+            maxCnt = cnt;
+    }
+    return maxCnt;
+}
+```
+
+#### [561. 数组拆分 I](https://leetcode-cn.com/problems/array-partition-i/)
+
+```c
+//方法：要使最小值的和最大，则需最小值尽可能大，所以为每个最大值配第二大值构成一对，则和最大。
+int cmp(const void *a, const void *b){
+    return *(int *)a - *(int *)b;
+}
+int arrayPairSum(int *nums, int numsSize){
+    qsort(nums, numsSize, sizeof(int), cmp);
+    int sum = 0;
+    for (int i = 0; i < numsSize; i = i + 2)
+        sum += nums[i];
+    return sum;
+}
+```
+
+#### [566. 重塑矩阵](https://leetcode-cn.com/problems/reshape-the-matrix/)
+
+```c
+int **matrixReshape(int **nums, int numsSize, int *numsColSize, int r, int c, int *returnSize, int **returnColumnSizes)
+{//使用 matrixReshape(*nums[],numSize,numsColSize[],r,c,&returnSize,&*returnColumnSizes);后面两个因为要修改，所以需要再使用一层指针
+    if (numsColSize[0] * numsSize != r * c || r == numsSize){
+        *returnColumnSizes = numsColSize;
+        *returnSize = numsSize;
+        return nums;
+    }
+    int **ans = (int **)malloc(sizeof(int *) * r);
+    int i = 0, k = 0;
+    *returnColumnSizes = (int *)malloc(sizeof(int) * r); //加*表示修改其值。
+    while (i < r * c){
+        int j = 0;
+        int *col = (int *)malloc(sizeof(int) * c);
+        while (j < c){
+            col[j++] = nums[i / numsColSize[0]][i % numsColSize[0]];
+            i++;
+        }
+        ans[k] = col;
+        (*returnColumnSizes)[k++] = c;  //*returnColumnSizes为一个数组地址，[]的优先级高于*
+    }
+    *returnSize = r;
+    return ans;
+}
+```
+
+
+
+#### [567. 字符串的排列](https://leetcode-cn.com/problems/permutation-in-string/)
+
+```c
+//方法：用双指针，统计s2两个指针中间的字符串各字符出现的次数是否等于s1中各字符的出现次数，且长度恰好等于s1的长度。
+//另外可以用给定固定长度，判断字符出现次数是否满足要求。
+bool checkInclusion(char *s1, char *s2)
+{
+    int len1 = 0;
+    int cnt[26] = {0};
+    while (*s1)  //统计s1字符串各字符出现的次数和字符串长度
+        cnt[*s1 - 'a']++, s1++, len1++;
+
+    int win = 0;
+    char *left = s2, *right = s2;
+    while (*right) {
+        int i = *right - 'a';
+        cnt[i]--, win++, right++;  //右指针向右移动，耗费一个字符c，长度加一
+        while (cnt[i] < 0)         //耗费c的字符数多于s1中的c字符的出现次数，左指针右移，直到将超出耗费的字符c补回。
+            cnt[*left - 'a']++, left++, win--;
+        if (win == len1)
+            return true;
+    }
+    return false;
 }
 ```
 
@@ -578,7 +708,139 @@ double findMaxAverage(int* nums, int numsSize, int k)
 }
 ```
 
+#### [665. 非递减数列](https://leetcode-cn.com/problems/non-decreasing-array/)
 
+```c
+//方法：每轮比较相连的三个数，nums[i-1],nums[i],nums[i+1]；
+//1.如果两端满足要求（nums[i-1]<=nums[i+1]），如果中间的数不满足要求，修改中间的数；
+//2.如果两端不满足要求，前两个数满足要求，修改最后一个数；
+//3.如果后两个数满足要求，修改第一个数（该情况只可能出现在数组最前面。数组前面放一个最小的数，则变为第一种情况）；
+//4.其他情况则至少修改两个数。一步一步移动，则该情况不会出现。
+#define MIN -100000
+bool checkPossibility(int *nums, int numsSize)
+{
+    int pre = MIN, k = 0;
+    for (int i = 0; i < numsSize - 1; ++i){
+        if (pre <= nums[i + 1]){
+            if (nums[i] < pre || nums[i] > nums[i + 1]) //中间的数不满足要求
+                k++, nums[i] = pre;
+        }else if (nums[i] >= pre)//前两个数满足要求
+            k++, nums[i + 1] = nums[i];
+        else   //其他情况不会出现
+            return false;
+        if (k == 2)
+            return false;
+        pre = nums[i];
+    }
+    return true;
+}
+//leetcode上的方法，当不满足非递减要求时，可以：1）将nums[i]修改为nums[i+1]，或2）将nums[i+1]修改为nums[i]；
+//情况1，降低前面的值（i==0），用掉一次修改机会，继续看后边是否满足；
+//情况2，提升后面的值（i>0），还需要看nums[i+2]和nums[i]的关系，如果提升后的值大于随后的值，则不满足要求
+bool checkPossibility(int* nums, int numsSize) {
+    int cnt = 0;
+    for (int i = 0; i < numsSize - 1; ++i) {
+        int x = nums[i], y = nums[i + 1];
+        if (x > y) {
+            cnt++;
+            if (cnt > 1) {
+                return false;
+            }
+            if (i > 0 && y < nums[i - 1]) {
+                nums[i + 1] = x;
+            }
+        }
+    }
+    return true;
+}
+```
+
+#### [697. 数组的度](https://leetcode-cn.com/problems/degree-of-an-array/)
+
+```c
+//需要一个哈希表来存储各元素出现的次数，要求该元素出现次数最多且长度最小的子串，则该子串两边恰好为该元素，所以可以再加两个哈希表，用来存储元素的起始下标和终止下标。
+#define M 50000
+int findShortestSubArray(int *nums, int numsSize){
+    int cnt[M], startIndex[M], endIndex[M];
+    for (int i = 0; i < M; ++i)
+        startIndex[i] = -1;
+    memset(cnt, 0, sizeof(int) * M);
+    int maxCnt = 0, minLen = M;
+    for (int i = 0; i < numsSize; ++i){
+        if (startIndex[nums[i]] == -1)
+            startIndex[nums[i]] = i;
+        endIndex[nums[i]] = i;
+        cnt[nums[i]]++;
+        int len = endIndex[nums[i]] - startIndex[nums[i]] + 1;
+        if (cnt[nums[i]] > maxCnt || (cnt[nums[i]] == maxCnt && minLen > len)){
+            minLen = len;
+            maxCnt = cnt[nums[i]];
+        }
+    }
+    return minLen;
+}
+```
+
+#### [703. 数据流中的第 K 大元素](https://leetcode-cn.com/problems/kth-largest-element-in-a-stream/)
+
+```c
+//方法：使用一个最大堆和最小堆，大的数放在最小堆中，小的数放在最大堆里。
+//大堆没有必要，因为构建好小堆后，如果新加的数大于堆顶，则将堆顶元素和替换为新元素，并调整。否则堆无需变化。
+#define MAX 10001
+typedef struct{
+    int minHeap[MAX], maxHeap[MAX];
+    int minSize, maxSize, k;
+} KthLargest;
+int less(int a, int b) { return a < b; }
+int greater(int a, int b) { return a > b; }
+void heapAdd(int *heap, int *size, int val, int (*cmp)(int, int)){//从堆末尾增加元素，并调整。
+    int son = ++*size;
+    while (son / 2 > 0 && cmp(val, heap[son / 2]))
+        heap[son] = heap[son / 2], son /= 2;
+    heap[son] = val;
+}
+void heapReplace(int *heap, int size, int *val, int (*cmp)(int, int)){ //出现较大的数，替换最小堆里最小的数
+    int k = heap[1];
+    int son = 2;
+    while (son <= size){
+        if (son + 1 <= size && cmp(heap[son + 1], heap[son]))
+            son += 1;
+        if (cmp(heap[son], *val))
+            heap[son / 2] = heap[son];
+        else
+            break;
+        son *= 2;
+    }
+    heap[son / 2] = *val;
+    *val = k;
+}
+KthLargest *kthLargestCreate(int k, int *nums, int numsSize){
+    KthLargest *heap = (KthLargest *)malloc(sizeof(KthLargest));
+    heap->minSize = 0, heap->maxSize = 0, heap->k = k;
+    int i;
+    for (i = 0; i < numsSize && i < k; ++i)//构建小堆
+        heapAdd(heap->minHeap, &heap->minSize, nums[i], less);
+    for (i; i < numsSize; ++i){//调整两个堆
+        if (nums[i] > heap->minHeap[1])
+            heapReplace(heap->minHeap, heap->minSize, &nums[i], less);
+        heapAdd(heap->maxHeap, &heap->maxSize, nums[i], greater);
+    }
+    return heap;
+}
+int kthLargestAdd(KthLargest *obj, int val){
+    if (obj->k > obj->minSize) //可能最开始通过的元素个数小于k。
+        heapAdd(obj->minHeap, &obj->minSize, val, less);
+    else{
+        if (obj->minHeap[1] < val)
+            heapReplace(obj->minHeap, obj->minSize, &val, less);
+        heapAdd(obj->maxHeap, &obj->maxSize, val, greater);
+    }
+    return obj->minHeap[1];
+}
+void kthLargestFree(KthLargest *obj){
+    free(obj);
+}
+```
 
 #### [724. 寻找数组的中心索引](https://leetcode-cn.com/problems/find-pivot-index/)
 
@@ -623,6 +885,51 @@ int pivotIndex(int *nums, int numsSize)
 }
 ```
 
+#### [765. 情侣牵手](https://leetcode-cn.com/problems/couples-holding-hands/)
+
+```c
+//方法：所有情侣牵手成功，则必须要求在偶数位i与下一位奇数位i+1坐的是一对情侣。这样的位子对有rowsize/2对，如果某对位子上坐的不是一对情侣，只需交互其中一个即可。
+//还可以使用并查集，连通分量
+int minSwapsCouples(int *row, int rowSize){
+    int index[rowSize];
+    for (int i = 0; i < rowSize; ++i)
+        index[row[i]] = i;
+    int cnt = 0;
+    for (int i = 0; i < rowSize; i = i + 2){//下一对位子
+        if (abs(row[i] - row[i + 1]) != 1 || (row[i] + row[i + 1]) % 4 != 1){ //一对位子上坐的不是一对情侣
+            if (row[i] % 2){   //为靠左边的人找到对应的情侣，将右边的人替换到左边情侣的位子上去，修改右边人的位子下标
+                row[index[row[i] - 1]] = row[i + 1];
+                index[row[i + 1]] = index[row[i] - 1];
+            }else{   //同上，只是左边人的情侣取决于左边人的奇偶性；可以用异或运算
+                row[index[row[i] + 1]] = row[i + 1];
+                index[row[i + 1]] = index[row[i] + 1];
+            }
+            //row[index[row[i]^1]]=row[i+1];  
+            //index[row[i+1]]=index[row[i]^1];
+            cnt++;
+        }
+    }
+    return cnt;
+}
+```
+
+#### [766. 托普利茨矩阵](https://leetcode-cn.com/problems/toeplitz-matrix/)
+
+```c
+//方法：依次比较相邻两行（前一行0到n-1，后一行1到n）的元素即可。
+bool isToeplitzMatrix(int **matrix, int matrixSize, int *matrixColSize){
+    for (int i = 1; i < matrixSize; ++i){
+        for (int j = 1; j < matrixColSize[i]; ++j){
+            if (matrix[i][j] - matrix[i - 1][j - 1])
+                return false;
+        }
+    }
+    return true;
+}
+```
+
+
+
 #### [888. 公平的糖果棒交换](https://leetcode-cn.com/problems/fair-candy-swap/)
 
 ```c
@@ -650,6 +957,177 @@ int* fairCandySwap(int* A, int ASize, int* B, int BSize, int* returnSize)
 }
 ```
 
+#### [907. 子数组的最小值之和](https://leetcode-cn.com/problems/sum-of-subarray-minimums/)
+
+```c
+//时间复杂度O(n^2),超时。依次获取每个字串和其最小值。
+#define MOD 1000000007
+int sumSubarrayMins(int *arr, int arrSize)
+{
+    int sum = 0;
+    for (int i = 0; i < arrSize; ++i){
+        int min = arr[i];
+        for (int j = i; j < arrSize; ++j){//依次得到从第j个位置开始的子集和相应的最小值。
+            if (min > arr[j])
+                min = arr[j];
+            sum += min;
+            sum %= MOD; //和超出范围，取模缩小值
+        }
+    }
+    return sum;
+}
+//leetcode方法：找出当前元素作为最小值的左边界（最小值不唯一）和右边界（唯一最小值）。该区间以当前元素为最小值的子串个数为(i-prev[i])*(next[i]-i)。
+#define MOD 1000000007
+int sumSubarrayMins(int *arr, int arrSize){
+    int prev[arrSize], next[arrSize];
+    int minQue[arrSize], right = 0;//存储当前位置之前的最小值和前一位置的元素（下标）
+    for (int i = 0; i < arrSize; ++i){ //小于当前元素的左边界
+        while (right > 0 && arr[i] <= arr[minQue[right - 1]]) 
+            right--;
+        if (right == 0)
+            prev[i] = -1;
+        else
+            prev[i] = minQue[right - 1];
+        minQue[right++] = i;
+    }
+    right = 0;
+    for (int i = arrSize - 1; i >= 0; --i){//小于等于当前元素的左边界
+        while (right > 0 && arr[i] < arr[minQue[right - 1]])
+            right--;
+        if (right == 0)
+            next[i] = arrSize;
+        else
+            next[i] = minQue[right - 1];
+        minQue[right++] = i;
+    }
+    int sum = 0;
+    for (int i = 0; i < arrSize; ++i){
+        sum += (long)arr[i] * (i - prev[i]) * (next[i] - i) % MOD;
+        sum %= MOD;
+    }
+    return sum;
+}
+```
+
+#### [978. 最长湍流子数组](https://leetcode-cn.com/problems/longest-turbulent-subarray/)
+
+```c
+//方法：判断arr[i]和arr[i-1]的大小连续反转的次数，计数终止情况：1.当出现等于时，需要向后移动直到出现不等于；2.反转未出现时。
+//其他方法用双指针和动态规划。
+int maxTurbulenceSize(int *arr, int arrSize)
+{
+    if (arrSize < 2)
+        return arrSize;
+    int cnt = 1, i = 1, maxCnt = 1;
+    while (i < arrSize){
+        while (i < arrSize && arr[i] == arr[i - 1])  //找到不等于
+            ++i;
+        if (i == arrSize)
+            break;
+        bool pre = arr[i] > arr[i - 1]; //前一个大小比较
+        cnt = 2, i++;
+        while (i < arrSize){
+            if (arr[i] == arr[i - 1])  //出现等于，终止
+                break;
+            bool cur = arr[i] > arr[i - 1];  //后一个大小比较
+            if ((pre || cur) && !(pre && cur)){//异或
+                i++, pre = cur, cnt++;
+            }
+            else
+                break;
+        }
+        if (cnt > maxCnt)
+            maxCnt = cnt;
+    }
+    return maxCnt;
+}
+```
+
+#### [992. K 个不同整数的子数组](https://leetcode-cn.com/problems/subarrays-with-k-different-integers/)
+
+```c
+//方法：统计窗口里各数字出现的次数cnt[A[i]]，不同数字的个数num，如果num==k（条件，出现一个新的数）,则找到一个合适窗口，然后从左往右缩小窗口，看看还有多少窗口满足num==k（终止条件为有一个数的出现次数变为0），只考虑包含新加入数字在内的子窗口。
+//双指针：
+//关系：给定一个窗口，我们可以先求当前窗口最多包含k个不同数的子窗口个数（=包含1到k个不同数的子窗口数之和），减去最多包含k-1个不同数的子窗口的个数，即得包含k个不同数的子窗口数。
+//统计新加一个数，会导致多少个新子窗口出现？，答案使L+1,L为之前窗口的大小，从右往左依次选不同长度0-L的子窗口加上新加入的数构成新的子窗口。
+//新加一个数，如果不同数的个数小于k，统计新的子窗口个数；
+//如果不同个数大于K,则应该缩小之前窗口，使其不同数个数变为k-1，即将左指针右移，直到有一个数的统计次数变为0；
+int currentWindow(int *A, int *cnt, int left, int right) //当前窗口满足K==num,从左往右缩小窗口，有多少个窗口满足。
+{
+    int ans = 0;
+    int i = left;
+    while (i < right){
+        if (--cnt[A[i++]])
+            ans++, print(A, i, right);
+        else
+            break;
+    }
+    for (int j = left; j < i; ++j) //复原出现频率。
+        cnt[A[j]]++;
+    return ans;
+}
+int subarraysWithKDistinct(int *A, int ASize, int K)
+{
+    int cnt[ASize + 1];
+    memset(cnt, 0, sizeof(int) * (ASize + 1));
+    int right = 0, left = 0, num = 0, ans = 0;
+    while (right < ASize){
+        if (cnt[A[right]] == 0)
+            num++;
+        cnt[A[right]]++;
+        if (num == K){  //满足要求的新窗口，
+            ans++;
+            ans += currentWindow(A, cnt, left, right);//包含最右端数的子窗口满足要求的个数。
+        } else if (num > K) {  //新窗口不满足要求，
+            while (left < right && --cnt[A[left++]]); //删掉一个数，使其出现次数为0
+            ans++, num--;
+            ans += currentWindow(A, cnt, left, right); //新满足的窗口
+        }
+        right++;
+    }
+    return ans;
+}
+```
+
+#### [995. K 连续位的最小翻转次数](https://leetcode-cn.com/problems/minimum-number-of-k-consecutive-bit-flips/)
+
+```c
+//方法：1.一个字串翻转两次，相当于没有翻转；2.各子串的翻转顺序对结果没有影响。遇到0就翻转接下来的K个数，则时间复杂度O(NK),超时。
+int minKBitFlips(int *A, int ASize, int K){
+    int cnt = 0;
+    for (int i = 0; i < ASize; ++i){
+        if (A[i] == 0){
+            if (i + K <= ASize){
+                for (int j = 0; j < K; ++j)
+                    A[i + j] ^= 1;
+                cnt++;
+            }else
+                return -1;
+        }
+    }
+    return cnt;
+}
+```
+
+
+
+#### [1004. 最大连续1的个数 III](https://leetcode-cn.com/problems/max-consecutive-ones-iii/)
+
+```c
+//方法：统计窗口内0出现的次数，如次数大于k，则左右边界一起移动，否则，只移动右边界。
+//leetcode使用求和后的差得到窗口间0的次数。
+int longestOnes(int *A, int ASize, int K){
+    int cnt[2] = {0, 0};
+    int right = 0, left = 0, maxLen = 0;
+    while (right < ASize){
+        cnt[A[right++]]++;
+        if (cnt[0] > K)
+            cnt[A[left++]]--;
+    }
+    return right - left;
+}
+```
+
 #### [1208. 尽可能使字符串相等](https://leetcode-cn.com/problems/get-equal-substrings-within-budget/)
 
 ```c
@@ -669,6 +1147,139 @@ int equalSubstring(char* s, char* t, int maxCost)
     return right - left;
 }
 ```
+
+#### [1423. 可获得的最大点数](https://leetcode-cn.com/problems/maximum-points-you-can-obtain-from-cards/)
+
+```c
+//先求靠前的k个值和，然后去掉最左边的元素，依次加入尾部的数，直到前考前的k个全部去掉。
+//两边k个元素的和=总和-中间窗口的和
+int maxScore(int *cardPoints, int cardPointsSize, int k)
+{
+    int sum = 0, i;
+    for (i = 0; i < cardPointsSize && i < k; ++i)
+        sum += cardPoints[i];
+    if (k == cardPointsSize)
+        return sum;
+    int left = i - 1, right = cardPointsSize - 1, maxSum = sum;
+    while (i > 0){
+        sum -= cardPoints[--i];
+        sum += cardPoints[right--];
+        if (sum > maxSum)
+            maxSum = sum;
+    }
+    return maxSum;
+}
+```
+
+#### [1438. 绝对差不超过限制的最长连续子数组](https://leetcode-cn.com/problems/longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit/)
+
+```c
+//使用堆来存储最大值和最小值，超时
+typedef struct{
+    int val, index;
+} node;
+
+int less(int a, int b){return a < b;}
+int greater(int a,int b){return a>b;}
+void heapPush(node *heap, int size, node k, int (*cmp)(int, int)){
+    int son = size;
+    while (son / 2 > 0){
+        if (cmp(k.val, heap[son / 2].val))
+            heap[son] = heap[son / 2];
+        else
+            break;
+        son /= 2;
+    }
+    heap[son] = k;
+}
+void heapDelete(node *heap, int *size, int index, int (*cmp)(int, int)){
+    int i = 1;
+    while (i <= *size && heap[i].index != index)
+        ++i;
+    if (i == *size){
+        (*size)--;
+        return;
+    }
+    node k = heap[(*size)--];
+    if (i / 2 > 0 && cmp(k.val, heap[i / 2].val)){
+        heapPush(heap, *size, k, cmp);
+    }else{
+        int son = i * 2;
+        while (son <= *size){
+            if (son + 1 <= *size && cmp(heap[son + 1].val, heap[son].val))
+                son++;
+            if (cmp(heap[son].val, k.val))
+                heap[son / 2] = heap[son];
+            else
+                break;
+            son *= 2;
+        }
+        heap[son / 2] = k;
+    }
+}
+
+void print(node *heap,int size){
+    for(int i=1;i<=size;++i)printf("%d(%d)>",heap[i].val,heap[i].index);
+    printf("\n");
+}
+
+int longestSubarray(int *nums, int numsSize, int limit)
+{
+    if (numsSize < 2)
+        return 1;
+    int left = 0, right = 0, maxLen = 0, maxSize = 0, minSize = 0;
+    node maxHeap[numsSize+1], minHeap[numsSize+1];
+    while (right < numsSize){
+        node k = {nums[right], right};
+        maxSize++, minSize++;
+        heapPush(minHeap, minSize, k, less);
+        heapPush(maxHeap, maxSize, k, greater);
+        //print(maxHeap, maxSize), print(minHeap, minSize);
+        while (maxHeap[1].val - minHeap[1].val > limit){
+            heapDelete(minHeap, &minSize, left, less);
+            heapDelete(maxHeap, &maxSize, left, greater);
+            //print(maxHeap, maxSize), print(minHeap, minSize);
+            left++;
+        }
+        right++;
+        int len = right - left;
+        if (len > maxLen)
+            maxLen = len;
+    }
+    return maxLen;
+}
+//leetcode的方法：两个队列，分别存储到当前位置的窗口中可能成为最大值和最小值的元素。两个队列的头表示当前窗口内的最大值和最小值，当窗口内的最大值与最小值差不满足要求时，窗口左边界往右移动，直到删掉最大值或最小值。使得新窗口满足要求。
+int longestSubarray(int *nums, int numsSize, int limit){
+    int maxQue[numsSize], minQue[numsSize];
+    int maxRight = 0, maxLeft = 0;
+    int minRight = 0, minLeft = 0;
+    int right = 0, left = 0;
+    int maxLen = 0;
+    while (right < numsSize){
+        //新加入一个元素后，删除那些到当前位置的窗口中不可能成为最大值（最小值）的元素
+        while (minLeft < minRight && minQue[minRight - 1] > nums[right])
+            minRight--;
+        while (maxLeft < maxRight && maxQue[maxRight - 1] < nums[right])
+            maxRight--;
+        //新加入的可能成为最大值（最小值）的元素
+        maxQue[maxRight++] = nums[right];
+        minQue[minRight++] = nums[right];
+        //到当前位置的窗口内，最大值与最小值的差大于limit，不满足要求，移动左边界，直到删除最大值或最小值，使窗口满足要求。
+        while (minLeft < minRight && maxLeft < maxRight && maxQue[maxLeft] - minQue[minLeft] > limit){
+            if (nums[left] == minQue[minLeft])
+                minLeft++;
+            if (nums[left] == maxQue[maxLeft])
+                maxLeft++;
+            left++;
+        }
+        right++;
+        maxLen = fmax(maxLen, right - left);
+    }
+    return maxLen;
+}
+```
+
+
 
 #### [1631. 最小体力消耗路径](https://leetcode-cn.com/problems/path-with-minimum-effort/)
 
