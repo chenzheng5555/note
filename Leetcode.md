@@ -333,6 +333,56 @@ int *getRow(int rowIndex, int *returnSize)
 }
 ```
 
+#### [232. 用栈实现队列](https://leetcode-cn.com/problems/implement-queue-using-stacks/)
+
+```c++
+//一个队列作为压入队栈，一个作为弹出栈，队列当要弹出元素时，如果弹出栈为空，将压入栈的元素压入到弹出栈中。
+class MyQueue {
+public:
+    stack<int> inStack, outStack;
+    void in2out(){
+        while (!inStack.empty()){
+            int x = inStack.top();
+            outStack.push(x);
+            inStack.pop();
+        }
+    }
+    /** Initialize your data structure here. */
+    MyQueue() {}
+
+    /** Push element x to the back of queue. */
+    void push(int x){
+        inStack.push(x);
+    }
+    /** Removes the element from in front of queue and returns that element. */
+    int pop(){
+        if (outStack.empty())
+            in2out();
+        int x = outStack.top();
+        outStack.pop();
+        return x;
+    }
+    /** Get the front element. */
+    int peek(){
+        if (outStack.empty())
+            in2out();
+        return outStack.top();
+    }
+    /** Returns whether the queue is empty. */
+    bool empty(){
+        return inStack.empty() && outStack.empty();
+    }
+};
+```
+
+#### [354. 俄罗斯套娃信封问题](https://leetcode-cn.com/problems/russian-doll-envelopes/)
+
+```c++
+//方法：放的方法为：根据大小，对于长和宽都满足要求的（都大于前一封），依次放；如果只有一条边满足要求，放最小的且满足要求的；
+//问题：我们不应该放某条过大的边，因为这样会导致后面本来更多满足要求信封无法放入。所以对一条边排好序后，再对另一条边排序，为了放入更多的信封，我们可能会舍弃掉之前的信封。
+
+```
+
 #### [424. 替换后的最长重复字符](https://leetcode-cn.com/problems/longest-repeating-character-replacement/)
 
 ```c
@@ -377,8 +427,6 @@ int *findDisappearedNumbers(int *nums, int numsSize, int *returnSize)
     return ans;
 }
 ```
-
-
 
 #### [480. 滑动窗口中位数](https://leetcode-cn.com/problems/sliding-window-median/)
 
@@ -595,6 +643,28 @@ double* medianSlidingWindow(int* nums, int numsSize, int k, int* returnSize)
     }
     return ans;
 }
+```
+
+#### [503. 下一个更大元素 II](https://leetcode-cn.com/problems/next-greater-element-ii/)
+
+```c++
+//方法：用一个栈来存储未找到下一个更大元素的元素，则栈里的元素应该递减的；如果当前元素大于栈里的一些元素，则找到了这些元素的下一个更大元素，并将这些元素弹出。然后将当前元素加入栈；因为是循环查看的，所以遍历完数组后，应该再遍历一下，找栈里剩余元素的下一个更大元素。
+class Solution{
+public:
+    vector<int> nextGreaterElements(vector<int> &nums){
+        stack<int> stk;
+        int n = nums.size();
+        vector<int> ans(n, -1);
+        for (int i = 0; i < 2 * n - 1; ++i){
+            while (!stk.empty() && nums[stk.top()] < nums[i % n]){
+                ans[stk.top()] = nums[i % n];
+                stk.pop();
+            }
+            stk.push(i % n);
+        }
+        return ans;
+    }
+};
 ```
 
 #### [485. 最大连续1的个数](https://leetcode-cn.com/problems/max-consecutive-ones/)
@@ -928,7 +998,41 @@ bool isToeplitzMatrix(int **matrix, int matrixSize, int *matrixColSize){
 }
 ```
 
+#### [832. 翻转图像](https://leetcode-cn.com/problems/flipping-an-image/)
 
+```c
+//也可以直接在原数组上修改。
+int **flipAndInvertImage(int **A, int ASize, int *AColSize, int *returnSize, int **returnColumnSizes){
+    *returnSize = ASize;
+    int **array = (int **)malloc(sizeof(int *) * ASize);     //指针构成的数组
+    *returnColumnSizes = (int *)malloc(sizeof(int) * ASize); //指向数组的指针
+    for (int i = 0; i < ASize; ++i){
+        (*returnColumnSizes)[i] = AColSize[i];                   //*returnColumnSizes获取其地址，
+        *(array + i) = (int *)malloc(sizeof(int) * AColSize[i]); //修改指针数组里的值
+        for (int j = 0; j < AColSize[i]; ++j)
+            array[i][j] = A[i][AColSize[i] - j - 1] ^ 1;
+    }
+    return array;
+}
+```
+
+#### [867. 转置矩阵](https://leetcode-cn.com/problems/transpose-matrix/)
+
+```c
+//和832. 翻转图像一样
+int **transpose(int **matrix, int matrixSize, int *matrixColSize, int *returnSize, int **returnColumnSizes){
+    *returnSize = matrixColSize[0];
+    *returnColumnSizes = (int *)malloc(sizeof(int) * matrixColSize[0]);
+    int **array = (int **)malloc(sizeof(int *) * matrixColSize[0]);
+    for (int i = 0; i < matrixColSize[0]; ++i){
+        (*returnColumnSizes)[i] = matrixSize;
+        array[i] = (int *)malloc(sizeof(int) * matrixSize);
+        for (int j = 0; j < matrixSize; ++j)
+            array[i][j] = matrix[j][i];
+    }
+    return array;
+}
+```
 
 #### [888. 公平的糖果棒交换](https://leetcode-cn.com/problems/fair-candy-swap/)
 
@@ -1127,6 +1231,128 @@ int longestOnes(int *A, int ASize, int K){
     return right - left;
 }
 ```
+
+#### [1052. 爱生气的书店老板](https://leetcode-cn.com/problems/grumpy-bookstore-owner/)
+
+```c
+//方法，记录没有使用技巧时的客户满意数，和使用技巧获得的最大增值数。
+int maxSatisfied(int *customers, int customersSize, int *grumpy, int grumpySize, int X){
+    int increase = 0, sum = 0, maxIncrease = 0;
+    for (int i = 0; i < customersSize; ++i){
+        if (grumpy[i])   //右边界使用技巧
+            increase += customers[i];
+        else
+            sum += customers[i]; //不使用技巧的满意数
+        if (i >= X && grumpy[i - X] == 1)  //左边界移除技巧
+            increase -= customers[i - X];
+        maxIncrease = fmax(increase, maxIncrease);
+        //printf("i=%d,sum=%d,inc=%d,maxInc=%d\n", i, sum, increase, maxIncrease);
+    }
+    return sum + maxIncrease;
+}
+```
+
+#### [1178. 猜字谜](https://leetcode-cn.com/problems/number-of-valid-words-for-each-puzzle/)
+
+```c
+//超时，对于每一个字谜，都遍历所有字。
+#define M 7
+#define S 26
+int numWord(char **words, int wordsSize, char *puzzle){
+    int puzzleSet[S] = {0}, cnt = 0;
+    for (int i = 0; i < M; ++i)
+        puzzleSet[puzzle[i] - 'a'] = i + 1;
+    for (int i = 0; i < wordsSize; ++i){
+        char *p = words[i];
+        int firstChar = 0;
+        while (*p){
+            int c = *p - 'a';
+            if (puzzleSet[c]){
+                if (puzzleSet[c] == 1)
+                    firstChar = 1;
+            }
+            else
+                break;
+            p++;
+        }
+        if (*p == 0 && firstChar)
+            cnt++;
+    }
+    return cnt;
+}
+int *findNumOfValidWords(char **words, int wordsSize, char **puzzles, int puzzlesSize, int *returnSize){
+    int *ans = (int *)malloc(sizeof(int) * puzzlesSize);
+    *returnSize = puzzlesSize;
+    for (int i = 0; i < puzzlesSize; ++i)
+        ans[i] = numWord(words, wordsSize, puzzles[i]);
+    return ans;
+}
+//超时，同上，不过先统计好所有字所包含的字符。然后每个字谜，只需进行查找。
+int* findNumOfValidWords(char ** words, int wordsSize, char ** puzzles, int puzzlesSize, int* returnSize){
+    int *ans=(int*)malloc(sizeof(int)*puzzlesSize);
+    *returnSize=puzzlesSize;
+    int cnt[wordsSize][S+1];
+    memset(cnt,0,sizeof(cnt));
+    for(int i=0;i<wordsSize;++i){
+        char *p=words[i];
+        int m=0;
+        while(*p){
+            if(cnt[i][*p-'a']==0)cnt[i][*p-'a']=1,m++;
+            p++;
+        }
+        cnt[i][S]=m;
+    }
+    for(int i=0;i<puzzlesSize;++i){
+        int n=0,pCnt[S]={0};
+        for(int j=0;j<M;++j)pCnt[puzzles[i][j]-'a']=j+1;
+        for(int j=0;j<wordsSize;++j){
+            if(cnt[j][S]>7)continue;
+            int k,firstChar=0;
+            for(k=0;k<S;++k){
+                if(cnt[j][k]){
+                    if(pCnt[k]==0)break;
+                    else if(pCnt[k]==1)firstChar=1;
+                }
+            }
+            if(k==S&&firstChar)n++;
+        }
+        ans[i]=n;
+    }
+    return ans;
+}
+//c++版本
+class Solution {
+public:
+    vector<int> findNumOfValidWords(vector<string>& words, vector<string>& puzzles) {
+        vector<unordered_set<char>> wordSet(words.size());
+        for(int i=0;i<words.size();++i){
+            for(auto c:words[i]){
+                wordSet[i].insert(c);
+            }
+        }
+        vector<int> ans;
+        for(auto str:puzzles){
+            unordered_set<char> puzzleSet;
+            for(auto c:str) puzzleSet.insert(c);
+            int cnt=0;
+            for(int i=0;i<words.size();++i){
+                if(wordSet[i].size()<=puzzleSet.size()&&wordSet[i].count(str[0])){
+                    auto it=wordSet[i].begin();
+                    while(it!=wordSet[i].end()){
+                        if(puzzleSet.count(*it)==0)break;
+                        ++it;
+                    }
+                    if(it==wordSet[i].end())cnt++;
+                }
+            }
+            ans.push_back(cnt);
+        }
+        return ans;
+    }
+};
+```
+
+
 
 #### [1208. 尽可能使字符串相等](https://leetcode-cn.com/problems/get-equal-substrings-within-budget/)
 
