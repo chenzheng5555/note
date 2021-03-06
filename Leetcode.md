@@ -1,10 +1,133 @@
 #### [1. 两数之和](https://leetcode-cn.com/problems/two-sum/)
 
+```c++
+//使用哈希表来存储目标值与当前元素的差，如果未来某个值对于该差值，则找到一个结果。返回。
+class Solution{
+public:
+    vector<int> twoSum(vector<int> &nums, int target){
+        unordered_map<int, int> hashTab;
+        for (int i = 0; i < nums.size(); ++i)
+        {
+            if (hashTab.find(nums[i]) != hashTab.end()) //如果哈希表中存在当前值
+                return {hashTab[nums[i]], i};
+            hashTab[target - nums[i]] = i;
+        }
+        return {};
+    }
+};
+```
+
 #### [2. 两数相加](https://leetcode-cn.com/problems/add-two-numbers/)
+
+```c++
+//模拟加法过程，和链表操作。
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        ListNode *head = l1, *pre = l1;
+        int carry = 0;
+        while (l1 && l2){ //同时遍历两个链表
+            int sum = l1->val + l2->val + carry;
+            carry = sum / 10, l1->val = sum % 10;
+            pre = l1, l1 = l1->next;
+            l2 = l2->next;
+        }
+        if (!l1) //原来存储结果的链表完了，将另一个链表剩余部分作为存放结果的地方。
+            pre->next = l2, l1 = l2;
+        while (l1){
+            int sum = l1->val + carry;
+            carry = sum / 10, l1->val = sum % 10;
+            pre = l1, l1 = l1->next;
+        }
+        if (carry) //有进位
+            pre->next = new ListNode(1);
+        return head;
+    }
+};
+```
 
 #### [3. 无重复字符的最长子串](https://leetcode-cn.com/problems/longest-substring-without-repeating-characters/)
 
+```c++
+//设立一个数组来存储当前窗口中各元素的个数，当新加入的元素导致其出现个数超过2，需要移动左边界，使窗口内的各元素出现次数为1.
+//leetcode使用的固定左边界，扩展右边界。
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        int left = 0, right = 0, len = 0;
+        vector<int> cnt(128, 0);
+        while (right < s.size()) {
+            cnt[s[right]]++;
+            while (cnt[s[right]] > 1)//查找值等于当前元素的位置，左边界移到下一位置，使窗口内各字符不会重复出现
+                cnt[s[left++]]--;
+            right++;
+            len = max(len, right - left);
+        }
+        return len;
+    }
+};
+```
+
 #### [4. 寻找两个正序数组的中位数](https://leetcode-cn.com/problems/median-of-two-sorted-arrays/)
+
+```c++
+//依次合并两个数组，直到到达合并数组的中间时，可以直接求得中位数。
+class Solution {
+public:
+    double findMedianSortedArrays(vector<int> &nums1, vector<int> &nums2){
+        int i = 0, j = 0, cnt = 0;
+        int m = nums2.size(), n = nums1.size();
+        int mid = (m + n - 1) / 2;
+        while (cnt < mid && i < n && j < m){ //找中位数的位置，丢弃前(m+n)/2-1个元素
+            if (nums1[i] < nums2[j])
+                i++;
+            else
+                j++;
+            cnt++;
+        }
+        if (cnt < mid){ //一个数组遍历完
+            while (cnt < mid){
+                i == n ? j++ : i++;
+                cnt++;
+            }
+        }
+
+        double x;
+        if ((m + n) % 2){  //根据数组个数的奇偶性确定中位数。
+            if (i == n)
+                x = nums2[j];
+            else if (j == m)
+                x = nums1[i];
+            else
+                x = min(nums1[i], nums2[j]);
+        }
+        else{
+            if (i == n)
+                x = nums2[j] + nums2[j + 1];
+            else if (j == m)
+                x = nums1[i] + nums1[i + 1];
+            else{//需要找接下来最小的两个数。
+                int min1 = min(nums1[i], nums2[j]), min2;
+                if (nums1[i] < nums2[j])
+                    i++;
+                else
+                    j++;
+                if (i == n)
+                    min2 = nums2[j];
+                else if (j == m)
+                    min2 = nums1[i];
+                else
+                    min2 = min(nums1[i], nums2[j]);
+                x = min1 + min2;
+            }
+            x /= 2;
+        }
+        return x;
+    }
+};
+```
+
+
 
 #### [5. 最长回文子串](https://leetcode-cn.com/problems/longest-palindromic-substring/)
 
@@ -1832,5 +1955,44 @@ int countBalls(int lowLimit, int highLimit)
     }
     return m;
 }
+```
+
+#### [5680. 找到最近的有相同 X 或 Y 坐标的点](https://leetcode-cn.com/problems/find-nearest-point-that-has-the-same-x-or-y-coordinate/)
+
+```c++
+//简单的遍历，找最小值。
+class Solution {
+public:
+    int nearestValidPoint(int x, int y, vector<vector<int>>& points) {
+        int minIndex = -1, minDis = 10000;
+        for (int i = 0; i < points.size(); ++i) {
+            if (x == points[i][0] || y == points[i][1]){
+                int dis = abs(x - points[i][0]) + abs(y - points[i][1]);
+                if (dis < minDis)
+                    minDis = dis, minIndex = i;
+            }
+        }
+        return minIndex;
+    }
+};
+```
+
+#### [5681. 判断一个数字是否可以表示成三的幂的和](https://leetcode-cn.com/problems/check-if-number-is-a-sum-of-powers-of-three/)
+
+```c++
+//判断一个数是否可以表示为3的幂之和，依次整除3，如果不能整除3，则可能有0次幂，减一，再整除，如果不行则为false.
+class Solution {
+public:
+    bool checkPowersOfThree(int n) {
+        while (n){
+            if (n % 3)
+                n--;
+            if (n % 3)
+                return false;
+            n /= 3;
+        }
+        return true;
+    }
+};
 ```
 
